@@ -1,0 +1,70 @@
+[project]
+name = "smolsnake"
+description = "Dependency side-loader for Python AWS Lambdas"
+authors = [{name = "Elvis Pranskevichus", email = "elvis@edgedb.com"}]
+requires-python = '>=3.8.0'
+readme = "README.md"
+license = {text = "0BSD"}
+dynamic = ["version"]
+keywords = [
+    "lambda",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Zero-Clause BSD (0BSD)",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database :: Front-Ends",
+]
+dependencies = [
+    "click~=8.1.0",
+    "poetry~=1.8.3",
+    "requirements-parser~=0.11.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    'ruff==0.5.7',
+]
+
+[project.scripts]
+smolsnake = "smolsnake:cli"
+
+[project.urls]
+github = "https://github.com/elprans/smolsnake"
+
+[build-system]
+requires = [
+    "setuptools>=60",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.cibuildwheel]
+build-frontend = "build"
+
+[tool.mypy]
+files = "src"
+strict = true
+exclude = [
+    "^tests/",
+]
+
+[tool.ruff]
+lint.select = ["E", "F", "W", "B"]
+lint.ignore = [
+    "F541",  # f-string without any placeholders
+]
+line-length = 80
+indent-width = 4

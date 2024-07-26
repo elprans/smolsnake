@@ -1,0 +1,58 @@
+#cloud-config
+#
+# Copyright Contributors to the smolsnake project.
+#
+# SPDX-License-Identifier: 0BSD
+#
+# vim: ft=yaml:ts=2:sw=2
+
+users:
+  - default
+  - name: ec2-user
+    ssh_authorized_keys:
+    ${indent(4, yamlencode(ssh_keys))}
+
+packages:
+  - amazon-efs-utils
+  - amazon-ssm-agent
+  - git
+  - python3-pip
+  - python3-boto3
+
+write_files:
+  - path: "/usr/local/bin/sqsincoming.py"
+    permissions: "0755"
+    content: |
+      ${indent(6, sqsincoming)}
+
+  - path: "/etc/systemd/system/sqsincoming.service"
+    content: |
+      [Unit]
+      Description=Smolsnake SQS Runner
+      Wants=network.target
+      After=network.target
+
+      [Service]
+      Type=simple
+      Restart=always
+      Environment="AWS_DEFAULT_REGION=${region}" "TMPDIR=%V/%N"
+      ExecStartPre=/usr/bin/mkdir -p "%V/%N"
+      ExecStart=/usr/local/bin/sqsincoming.py \
+        --sqs-request-queue-url="${sqs_request_queue_url}" \
+        --sqs-response-queue-url="${sqs_response_queue_url}" \
+        /var/lib/smolsnake/bin/smolsnake install \
+          --lockfile=- \
+          --python-version=%%PythonVersion%% \
+          --target=/mnt/efs
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - systemctl enable --now --no-block amazon-ssm-agent
+  - mkdir -p /mnt/efs
+  - echo "${file_system_id} /mnt/efs efs _netdev,tls,accesspoint=${access_point_id} 0 0" >> /etc/fstab
+  - mount /mnt/efs
+  - python3 -m venv /var/lib/smolsnake
+  - /var/lib/smolsnake/bin/python -m pip install "git+https://github.com/elprans/smolsnake.git@${smolsnake_rev}"
+  - systemctl enable --now --no-block sqsincoming.service
